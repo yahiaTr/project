@@ -1,9 +1,13 @@
 const mongoose = require("mongoose");
-
+const uri = "mmongodb+srv://tryahiamo99:<6kWEnVzs4tv7cezP>@cluster0.yb7xz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 const ConnectDB = async() => {
+
     try{
-        await mongoose.connect("mongodb+srv://tryahiamo99:<6kWEnVzs4tv7cezP>@cluster0.yb7xz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0");
-        console.log("connected to mongoDB");
+    mongoose.connect(uri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        ssl: true, // تأكد من أن الاتصال باستخدام SSL
+    })
 
     }catch(error){
         console.log("failed to connect to mongoDB");
