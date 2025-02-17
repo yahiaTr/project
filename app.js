@@ -5,11 +5,9 @@ const ConnectDB = require("./config/config");
 require('dotenv').config();
 const path = require("path");
 const app = express();
-app.use(cors({
-    origin: ['http://localhost:3000', 'https://your-frontend.vercel.app'], // ضع هنا URL الـ frontend الذي ترغب في السماح له بالوصول
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // حدد الطرق المسموح بها
-    allowedHeaders: ['Content-Type', 'Authorization'], // حدد الـ headers المسموح بها
-  }));
+
+app.use(cors());
+
 ConnectDB();
 const port = 5000;
 
