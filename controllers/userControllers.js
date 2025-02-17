@@ -65,20 +65,20 @@ const LoginUser = async(req,res) => {
     }
 
     try{
-    const existingEmail = await User.findOne({email});
+    const newUser = await User.findOne({email});
     
-    if(!existingEmail){
+    if(!newUser){
        return res.status(400).json({email : "Invaild email or password"});
     }
 
-    const isVaildPassword = await bcrypt.compare(password , existingEmail.password);
+    const isVaildPassword = await bcrypt.compare(password , newUser.password);
 
     if(!isVaildPassword){
         return res.status(400).json({password : "Invaild email or password"});
     }
 
-    const accessToken = jwt.sign({Id : existingEmail._id , role : existingEmail.role} , "secretKey");
-    res.status(200).json({existingEmail , accessToken});
+    const accessToken = jwt.sign({Id : newUser._id , role : newUser.role} , "secretKey");
+    res.status(200).json({newUser , accessToken});
 }catch(error){
     res.status(500).json({message : "something went wrong while logging in"});
 }
