@@ -5,6 +5,7 @@ const fs = require('fs');
 const FormData = require('form-data');  // لاستعمال FormData
 const axios = require("axios");
 require('dotenv').config();
+const cloudinary = require("../config/cloudinary");
 const path = require("path");
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
@@ -195,85 +196,148 @@ const LoginWithPovider = async(req,res) => {
         }
     };
     
-    const SendMessageToStability = async (req, res) => {
-        try {
-            const { prompt } = req.body; // جلب prompt (السؤال)
-            console.log("Received prompt:", prompt);
+    // const SendMessageToStability = async (req, res) => {
+    //     try {
+    //         const { prompt } = req.body; // جلب prompt (السؤال)
+    //         console.log("Received prompt:", prompt);
     
-            if (!prompt) {
-                return res.status(400).json({ error: "Prompt is required" });
-            }
+    //         if (!prompt) {
+    //             return res.status(400).json({ error: "Prompt is required" });
+    //         }
     
-            // البحث عن المستخدم في قاعدة البيانات
-            const user = await User.findById(req.params.id);
-            console.log("User found:", user);
+    //         // البحث عن المستخدم في قاعدة البيانات
+    //         const user = await User.findById(req.params.id);
+    //         console.log("User found:", user);
     
-            if (!user) {
-                return res.status(404).json({ error: "User not found" });
-            }
+    //         if (!user) {
+    //             return res.status(404).json({ error: "User not found" });
+    //         }
     
-            // استدعاء API من Hugging Face
-            const response = await axios.post(
-                "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4",
-                { inputs: prompt },
-                {
-                    headers: {
-                        Authorization: `Bearer ${STABILITY_API_KEY}`,
-                        "Content-Type": "application/json",
-                    },
-                    responseType: "arraybuffer",
-                }
-            );
+    //         // استدعاء API من Hugging Face
+    //         const response = await axios.post(
+    //             "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4",
+    //             { inputs: prompt },
+    //             {
+    //                 headers: {
+    //                     Authorization: `Bearer ${STABILITY_API_KEY}`,
+    //                     "Content-Type": "application/json",
+    //                 },
+    //                 responseType: "arraybuffer",
+    //             }
+    //         );
     
-            console.log("API Response Status:", response.status);
+    //         console.log("API Response Status:", response.status);
     
-            if (response.status !== 200) {
-                console.error("API Error:", response.status, response.data);
-                return res.status(response.status).json({ error: "Failed to generate image" });
-            }
+    //         if (response.status !== 200) {
+    //             console.error("API Error:", response.status, response.data);
+    //             return res.status(response.status).json({ error: "Failed to generate image" });
+    //         }
     
-            // إنشاء اسم فريد للصورة بناءً على التوقيت
-            const imageName = `generated-image-${Date.now()}.png`;
-            const publicDir = path.join(__dirname, "../public/images");
-            const imagePath = path.join(publicDir, imageName);
+    //         // إنشاء اسم فريد للصورة بناءً على التوقيت
+    //         const imageName = `generated-image-${Date.now()}.png`;
+    //         const publicDir = path.join(__dirname, "../public/images");
+    //         const imagePath = path.join(publicDir, imageName);
     
-            console.log("Saving image to:", imagePath);
+    //         console.log("Saving image to:", imagePath);
     
-            // التأكد من أن مجلد images موجود، وإذا لم يكن موجودًا يتم إنشاؤه
-            if (!fs.existsSync(publicDir)) {
-                fs.mkdirSync(publicDir, { recursive: true });
-            }
+    //         // التأكد من أن مجلد images موجود، وإذا لم يكن موجودًا يتم إنشاؤه
+    //         if (!fs.existsSync(publicDir)) {
+    //             fs.mkdirSync(publicDir, { recursive: true });
+    //         }
     
-            // حفظ الصورة في المجلد
-            fs.writeFileSync(imagePath, response.data);
+    //         // حفظ الصورة في المجلد
+    //         fs.writeFileSync(imagePath, response.data);
     
-            // إنشاء رابط الصورة
-            const imageUrl = `/images/${imageName}`;
-            console.log("Image URL:", imageUrl);
+    //         // إنشاء رابط الصورة
+    //         const imageUrl = `/images/${imageName}`;
+    //         console.log("Image URL:", imageUrl);
     
-            // تحديث بيانات المستخدم بإضافة السؤال والصورة إلى `images`
-            user.images.push({
-                question: prompt,
-                url: imageUrl,
-            });
+    //         // تحديث بيانات المستخدم بإضافة السؤال والصورة إلى `images`
+    //         user.images.push({
+    //             question: prompt,
+    //             url: imageUrl,
+    //         });
     
-            console.log("Updated user images:", user.images);
+    //         console.log("Updated user images:", user.images);
     
-            // حفظ التعديلات في قاعدة البيانات
-            await user.save();
-            console.log("User saved successfully!");
+    //         // حفظ التعديلات في قاعدة البيانات
+    //         await user.save();
+    //         console.log("User saved successfully!");
     
-            // إرسال الاستجابة إلى العميل
-            res.json({
-                message: "Image generated and saved successfully",
-                imageUrl: imageUrl,
-            });
+    //         // إرسال الاستجابة إلى العميل
+    //         res.json({
+    //             message: "Image generated and saved successfully",
+    //             imageUrl: imageUrl,
+    //         });
     
-        } catch (error) {
-            console.error("Error:", error);
-            res.status(500).json({ error: error.message });
+    //     } catch (error) {
+    //         console.error("Error:", error);
+    //         res.status(500).json({ error: error.message });
+    //     }
+    // };    
+
+const SendMessageToStability = async (req, res) => {
+    try {
+        const { prompt } = req.body;
+        console.log("Received prompt:", prompt);
+
+        if (!prompt) {
+            return res.status(400).json({ error: "Prompt is required" });
         }
-    };    
+
+        // البحث عن المستخدم في قاعدة البيانات
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // استدعاء API من Hugging Face
+        const response = await axios.post(
+            "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4",
+            { inputs: prompt },
+            {
+                headers: {
+                    Authorization: `Bearer ${STABILITY_API_KEY}`,
+                    "Content-Type": "application/json",
+                },
+                responseType: "arraybuffer",
+            }
+        );
+
+        if (response.status !== 200) {
+            console.error("API Error:", response.status, response.data);
+            return res.status(response.status).json({ error: "Failed to generate image" });
+        }
+
+        console.log("Image generated successfully, uploading to Cloudinary...");
+
+        // رفع الصورة إلى Cloudinary
+        const result = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream({ resource_type: "image" }, (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+            }).end(response.data);
+        });
+
+        const imageUrl = result.secure_url;
+        console.log("Image uploaded to Cloudinary:", imageUrl);
+
+        // تحديث بيانات المستخدم بإضافة السؤال والصورة إلى images
+        user.images.push({ question: prompt, url: imageUrl });
+
+        await user.save();
+        console.log("User updated successfully!");
+
+        res.json({
+            message: "Image generated and uploaded successfully",
+            imageUrl: imageUrl,
+        });
+
+    } catch (error) {
+        console.error("Error:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
 
 module.exports = {
     SignupUser,
